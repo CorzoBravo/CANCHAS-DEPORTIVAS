@@ -1,0 +1,58 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Cliente {
+  id           String    @id @default(uuid())
+  nombre       String
+  email        String    @unique
+  telefono     String?
+  passwordHash String
+  rol          String    @default("cliente") // cliente | admin
+  createdAt    DateTime  @default(now())
+  reservas     Reserva[]
+}
+
+model Cancha {
+  id         String    @id @default(uuid())
+  nombre     String
+  tipo       String    // ej: Futbol 5, Tenis, Basket
+  precioHora Decimal   @db.Decimal(10, 2)
+  habilitada Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  reservas   Reserva[]
+}
+
+model Reserva {
+  id         String    @id @default(uuid())
+  clienteId  String
+  canchaId   String
+  fecha      DateTime  @db.Date
+  horaInicio String    // Formato HH:MM
+  horaFin    String    // Formato HH:MM
+  estado     String    @default("pendiente") // pendiente | confirmada | cancelada
+  createdAt  DateTime  @default(now())
+  
+  cliente    Cliente   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cancha     Cancha    @relation(fields: [canchaId], references: [id], onDelete: Cascade)
+  pagos      Pago[]
+
+  // Restricción única para evitar físicamente la doble reserva
+  @@unique([canchaId, fecha, horaInicio])
+}
+
+model Pago {
+  id                 String   @id @default(uuid())
+  reservaId          String
+  monto              Decimal  @db.Decimal(10, 2)
+  fechaPago          DateTime @default(now())
+  estado             String   // pagado | rechazado
+  referenciaPasarela String?
+
+  reserva            Reserva  @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+}
