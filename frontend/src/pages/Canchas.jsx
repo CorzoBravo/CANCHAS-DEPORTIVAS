@@ -7,17 +7,14 @@ function Canchas() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Court lists state
   const [canchas, setCanchas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Admin Court Creation State
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [editingCourtId, setEditingCourtId] = useState(null);
-  const [courtForm, setCourtForm] = useState({ nombre: '', tipo: 'Fútbol 5', precioHora: '', habilitada: true });
+  const [courtForm, setCourtForm] = useState({ nombre: '', tipo: 'Futbol 5', precioHora: '', habilitada: true });
 
-  // Booking Modal State
   const [selectedCourt, setSelectedCourt] = useState(null);
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [availability, setAvailability] = useState(null);
@@ -34,17 +31,15 @@ function Canchas() {
   const fetchCanchas = async () => {
     setLoading(true);
     try {
-      // Admins see all courts, standard clients only see enabled ones
       const response = await api.get(`/canchas?all=${isAdmin ? 'true' : 'false'}`);
       setCanchas(response.data.data.courts);
     } catch (err) {
-      setError('Error al cargar el catálogo de canchas.');
+      setError('Error al cargar el catalogo de canchas.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Admin - Add/Edit Court
   const handleCourtFormSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -61,7 +56,7 @@ function Canchas() {
         await api.post('/canchas', payload);
       }
 
-      setCourtForm({ nombre: '', tipo: 'Fútbol 5', precioHora: '', habilitada: true });
+      setCourtForm({ nombre: '', tipo: 'Futbol 5', precioHora: '', habilitada: true });
       setEditingCourtId(null);
       setShowAdminForm(false);
       fetchCanchas();
@@ -82,7 +77,7 @@ function Canchas() {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta cancha?')) return;
+    if (!window.confirm('Estas seguro de que deseas eliminar esta cancha?')) return;
     try {
       await api.delete(`/canchas/${id}`);
       fetchCanchas();
@@ -91,7 +86,6 @@ function Canchas() {
     }
   };
 
-  // Booking - Open modal and check availability
   const handleOpenBooking = (court) => {
     setSelectedCourt(court);
     setBookingHours({ horaInicio: '08:00', horaFin: '09:00' });
@@ -118,7 +112,6 @@ function Canchas() {
     }
   };
 
-  // Recalculate price dynamically when hours or court changes
   useEffect(() => {
     if (!selectedCourt) return;
     const [sh, sm] = bookingHours.horaInicio.split(':').map(Number);
@@ -149,7 +142,6 @@ function Canchas() {
       });
 
       const reservation = response.data.data.reservation;
-      // Close modal and redirect to payment
       setSelectedCourt(null);
       navigate(`/pagos/${reservation.id}`);
     } catch (err) {
@@ -167,21 +159,20 @@ function Canchas() {
           <p className="page-subtitle">Explora y reserva nuestros espacios equipados</p>
         </div>
         {isAdmin && (
-          <button onClick={() => { setShowAdminForm(!showAdminForm); setEditingCourtId(null); }} className="btn-primary">
+          <button onClick={() => { setShowAdminForm(!showAdminForm); setEditingCourtId(null); }} className="btn btn-primary">
             {showAdminForm ? 'Ocultar Formulario' : 'Agregar Cancha'}
           </button>
         )}
       </header>
 
-      {error && <div className="alert-error">{error}</div>}
+      {error && <div className="alert alert-error">{error}</div>}
 
-      {/* Admin Court Form */}
       {isAdmin && showAdminForm && (
-        <form onSubmit={handleCourtFormSubmit} className="admin-form-card glass-card animate-fade-in">
+        <form onSubmit={handleCourtFormSubmit} className="admin-form-card card animate-fade-in">
           <h3>{editingCourtId ? 'Editar Cancha' : 'Agregar Nueva Cancha'}</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>Nombre de la Cancha</label>
+              <label className="form-label">Nombre de la Cancha</label>
               <input
                 type="text"
                 value={courtForm.nombre}
@@ -191,20 +182,20 @@ function Canchas() {
               />
             </div>
             <div className="form-group">
-              <label>Deporte / Tipo</label>
+              <label className="form-label">Deporte / Tipo</label>
               <select
                 value={courtForm.tipo}
                 onChange={(e) => setCourtForm({ ...courtForm, tipo: e.target.value })}
                 className="form-input"
               >
-                <option value="Fútbol 5">Fútbol 5</option>
+                <option value="Futbol 5">Futbol 5</option>
                 <option value="Tenis">Tenis</option>
-                <option value="Básquetbol">Básquetbol</option>
+                <option value="Basquetbol">Basquetbol</option>
                 <option value="Squash">Squash</option>
               </select>
             </div>
             <div className="form-group">
-              <label>Precio por Hora ($)</label>
+              <label className="form-label">Precio por Hora ($)</label>
               <input
                 type="number"
                 step="0.01"
@@ -226,24 +217,25 @@ function Canchas() {
             </div>
           </div>
           <div className="form-actions">
-            <button type="submit" className="btn-primary">Guardar</button>
-            <button type="button" onClick={() => { setShowAdminForm(false); setEditingCourtId(null); }} className="btn-secondary">Cancelar</button>
+            <button type="submit" className="btn btn-primary">Guardar</button>
+            <button type="button" onClick={() => { setShowAdminForm(false); setEditingCourtId(null); }} className="btn btn-secondary">Cancelar</button>
           </div>
         </form>
       )}
 
-      {/* Catalog Grid */}
       {loading ? (
-        <div className="loading-container">Cargando catálogo...</div>
+        <div className="loading-container">
+          <div className="spinner"></div>
+        </div>
       ) : (
         <div className="canchas-grid">
           {canchas.map((cancha) => (
-            <div key={cancha.id} className={`cancha-card glass-card ${!cancha.habilitada ? 'disabled-court' : ''}`}>
+            <div key={cancha.id} className={`cancha-card card card-hover ${!cancha.habilitada ? 'disabled-court' : ''}`}>
               <div className="court-icon">
-                {cancha.tipo.includes('Fútbol') && '⚽'}
-                {cancha.tipo.includes('Tenis') && '🎾'}
-                {cancha.tipo.includes('Básquet') && '🏀'}
-                {cancha.tipo.includes('Squash') && '🏸'}
+                {cancha.tipo.includes('Futbol') && '\u26BD'}
+                {cancha.tipo.includes('Tenis') && '\uD83C\uDFBE'}
+                {cancha.tipo.includes('Basquet') && '\uD83C\uDFC0'}
+                {cancha.tipo.includes('Squash') && '\uD83C\uDFD8'}
               </div>
               <h2 className="court-name">{cancha.nombre}</h2>
               <div className="court-info">
@@ -251,17 +243,21 @@ function Canchas() {
                 <span className="price-tag">${cancha.precioHora} / hora</span>
               </div>
               {!cancha.habilitada && <span className="disabled-badge">Mantenimiento</span>}
-              
+
               <div className="card-actions">
                 {cancha.habilitada ? (
-                  <button onClick={() => handleOpenBooking(cancha)} className="btn-primary action-btn">Reservar Turno</button>
+                  <button onClick={() => handleOpenBooking(cancha)} className="btn btn-primary">Reservar Turno</button>
                 ) : (
-                  <button className="btn-primary action-btn" disabled>No Disponible</button>
+                  <button className="btn btn-primary" disabled>No Disponible</button>
                 )}
                 {isAdmin && (
                   <div className="admin-actions">
-                    <button onClick={() => handleEditClick(cancha)} className="btn-secondary btn-icon">✏️</button>
-                    <button onClick={() => handleDeleteClick(cancha.id)} className="btn-secondary btn-icon btn-delete">🗑️</button>
+                    <button onClick={() => handleEditClick(cancha)} className="btn btn-secondary btn-icon" title="Editar">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button onClick={() => handleDeleteClick(cancha.id)} className="btn btn-danger btn-icon" title="Eliminar">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
                   </div>
                 )}
               </div>
@@ -270,20 +266,19 @@ function Canchas() {
         </div>
       )}
 
-      {/* Booking Dialog Modal */}
       {selectedCourt && (
         <div className="modal-backdrop">
-          <div className="modal-content glass-card animate-fade-in">
+          <div className="modal-content animate-slide-up">
             <div className="modal-header">
               <h2>Reservar {selectedCourt.nombre}</h2>
-              <button onClick={() => setSelectedCourt(null)} className="modal-close">×</button>
+              <button onClick={() => setSelectedCourt(null)} className="modal-close">&times;</button>
             </div>
-            
+
             <form onSubmit={handleCreateBooking} className="booking-form">
-              {bookingError && <div className="alert-error">{bookingError}</div>}
-              
+              {bookingError && <div className="alert alert-error">{bookingError}</div>}
+
               <div className="form-group">
-                <label>Seleccionar Fecha</label>
+                <label className="form-label">Seleccionar Fecha</label>
                 <input
                   type="date"
                   value={bookingDate}
@@ -294,9 +289,8 @@ function Canchas() {
                 />
               </div>
 
-              {/* Real-time schedule display */}
               <div className="availability-section">
-                <h4>Disponibilidad para el día {bookingDate}</h4>
+                <h4>Disponibilidad para el dia {bookingDate}</h4>
                 {loadingAvailability ? (
                   <div className="spinner-text">Consultando horarios...</div>
                 ) : availability ? (
@@ -304,7 +298,7 @@ function Canchas() {
                     <div className="schedule-column">
                       <h5>Bloques Ocupados</h5>
                       {availability.ocupados.length === 0 ? (
-                        <p className="status-empty">Ninguno (Cancha libre todo el día)</p>
+                        <p className="status-empty">Ninguno (Cancha libre todo el dia)</p>
                       ) : (
                         <ul className="schedule-list">
                           {availability.ocupados.map((item, idx) => (
@@ -329,13 +323,12 @@ function Canchas() {
                 ) : null}
               </div>
 
-              {/* Duration selection */}
               <div className="hours-selector-grid">
                 <div className="form-group">
-                  <label>Hora Inicio</label>
+                  <label className="form-label">Hora Inicio</label>
                   <input
                     type="time"
-                    step="900" // 15 mins steps
+                    step="900"
                     value={bookingHours.horaInicio}
                     onChange={(e) => setBookingHours({ ...bookingHours, horaInicio: e.target.value })}
                     className="form-input"
@@ -343,7 +336,7 @@ function Canchas() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Hora Fin</label>
+                  <label className="form-label">Hora Fin</label>
                   <input
                     type="time"
                     step="900"
@@ -355,288 +348,22 @@ function Canchas() {
                 </div>
               </div>
 
-              {/* Dynamic total price */}
               {calculatedPrice > 0 && (
                 <div className="price-estimation">
-                  Total Estimado: <strong className="green-text">${calculatedPrice.toFixed(2)}</strong>
+                  Total Estimado: <strong>${calculatedPrice.toFixed(2)}</strong>
                 </div>
               )}
 
               <div className="modal-actions">
-                <button type="submit" disabled={bookingSubmitting || calculatedPrice <= 0} className="btn-primary">
+                <button type="submit" disabled={bookingSubmitting || calculatedPrice <= 0} className="btn btn-primary">
                   {bookingSubmitting ? 'Procesando...' : 'Confirmar Pre-Reserva'}
                 </button>
-                <button type="button" onClick={() => setSelectedCourt(null)} className="btn-secondary">Cerrar</button>
+                <button type="button" onClick={() => setSelectedCourt(null)} className="btn btn-secondary">Cerrar</button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      <style>{`
-        .canchas-page {
-          padding: 1rem 0;
-        }
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-        .page-title {
-          font-size: 2.2rem;
-          font-weight: 800;
-          background: var(--gradient-main);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .page-subtitle {
-          color: var(--text-secondary);
-        }
-        .canchas-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 2rem;
-          margin-top: 1rem;
-        }
-        .cancha-card {
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          padding: 2.5rem 1.5rem 1.5rem 1.5rem;
-        }
-        .disabled-court {
-          opacity: 0.6;
-        }
-        .court-icon {
-          font-size: 3rem;
-          margin-bottom: 1rem;
-        }
-        .court-name {
-          font-size: 1.3rem;
-          font-weight: 700;
-          margin-bottom: 0.5rem;
-          color: var(--text-primary);
-        }
-        .court-info {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 1.5rem;
-          align-items: center;
-        }
-        .info-badge {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid var(--border-glass);
-          padding: 0.2rem 0.6rem;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-        }
-        .price-tag {
-          color: var(--color-primary);
-          font-weight: 600;
-          font-size: 0.9rem;
-        }
-        .disabled-badge {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          background: var(--color-danger);
-          color: #05050a;
-          font-size: 0.75rem;
-          font-weight: 700;
-          padding: 0.2rem 0.5rem;
-          border-radius: 4px;
-        }
-        .card-actions {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-          margin-top: auto;
-        }
-        .action-btn {
-          width: 100%;
-        }
-        .admin-actions {
-          display: flex;
-          gap: 0.5rem;
-          justify-content: center;
-        }
-        .btn-icon {
-          padding: 0.4rem !important;
-          font-size: 0.9rem;
-        }
-        .btn-delete:hover {
-          border-color: var(--color-danger) !important;
-          background: rgba(255, 107, 107, 0.1) !important;
-        }
-        
-        /* Admin Form */
-        .admin-form-card {
-          margin-bottom: 2rem;
-        }
-        .admin-form-card h3 {
-          margin-bottom: 1.5rem;
-        }
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-        .row-checkbox {
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          height: 100%;
-          padding-top: 1.8rem;
-        }
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: var(--text-primary);
-          cursor: pointer;
-          user-select: none;
-        }
-        .form-actions {
-          display: flex;
-          gap: 1rem;
-        }
-
-        /* Modal backdrop and content */
-        .modal-backdrop {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          background: rgba(0,0,0,0.6);
-          backdrop-filter: blur(8px);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 1000;
-          padding: 1rem;
-        }
-        .modal-content {
-          width: 100%;
-          max-width: 580px;
-          border-color: var(--border-glass-hover);
-        }
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.5rem;
-          border-bottom: 1px solid var(--border-glass);
-          padding-bottom: 0.75rem;
-        }
-        .modal-close {
-          background: transparent;
-          border: none;
-          color: var(--text-secondary);
-          font-size: 2rem;
-          cursor: pointer;
-          line-height: 1;
-        }
-        .modal-close:hover {
-          color: var(--color-danger);
-        }
-
-        /* Booking forms inside modal */
-        .booking-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-        .availability-section {
-          background: rgba(255,255,255,0.02);
-          border: 1px solid var(--border-glass);
-          border-radius: 8px;
-          padding: 1rem;
-        }
-        .availability-section h4 {
-          font-size: 0.95rem;
-          margin-bottom: 0.75rem;
-          color: var(--color-secondary);
-        }
-        .schedules-container {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.5rem;
-        }
-        .schedule-column h5 {
-          font-size: 0.85rem;
-          margin-bottom: 0.5rem;
-          color: var(--text-primary);
-        }
-        .schedule-list {
-          list-style: none;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.4rem;
-        }
-        .status-empty {
-          color: var(--text-muted);
-          font-size: 0.8rem;
-          font-style: italic;
-        }
-        .badge-occupied {
-          background: rgba(255, 107, 107, 0.12);
-          border: 1px solid rgba(255, 107, 107, 0.3);
-          color: var(--color-danger);
-          padding: 0.15rem 0.4rem;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: 500;
-        }
-        .badge-free {
-          background: rgba(0, 245, 160, 0.12);
-          border: 1px solid rgba(0, 245, 160, 0.3);
-          color: var(--color-success);
-          padding: 0.15rem 0.4rem;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: 500;
-        }
-        .hours-selector-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-        }
-        .price-estimation {
-          font-size: 1.15rem;
-          color: var(--text-secondary);
-          text-align: right;
-          border-top: 1px dashed var(--border-glass);
-          padding-top: 1rem;
-        }
-        .green-text {
-          color: var(--color-success);
-          font-weight: 700;
-          text-shadow: 0 0 10px rgba(0, 245, 160, 0.2);
-        }
-        .modal-actions {
-          display: flex;
-          gap: 1rem;
-          justify-content: flex-end;
-          margin-top: 1rem;
-        }
-        .spinner-text {
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-          animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-          0% { opacity: 0.5; }
-          50% { opacity: 1; }
-          100% { opacity: 0.5; }
-        }
-      `}</style>
     </div>
   );
 }

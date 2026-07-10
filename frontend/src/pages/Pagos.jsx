@@ -11,7 +11,6 @@ function Pagos() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Card Form State
   const [cardForm, setCardForm] = useState({
     numeroTarjeta: '',
     nombreTitular: '',
@@ -48,7 +47,6 @@ function Pagos() {
   };
 
   const handleCardNumberChange = (e) => {
-    // Format card number with spaces (XXXX XXXX XXXX XXXX)
     const val = e.target.value.replace(/\D/g, '').substring(0, 16);
     const matches = val.match(/.{1,4}/g);
     const formatted = matches ? matches.join(' ') : '';
@@ -56,7 +54,6 @@ function Pagos() {
   };
 
   const handleExpiryChange = (e) => {
-    // Format expiry date as MM/AA
     const val = e.target.value.replace(/\D/g, '').substring(0, 4);
     const formatted = val.length >= 3 ? `${val.substring(0, 2)}/${val.substring(2, 4)}` : val;
     setCardForm({ ...cardForm, expiracion: formatted });
@@ -73,9 +70,8 @@ function Pagos() {
     setSubmitting(true);
 
     try {
-      // Send raw unspaced card number to backend
       const cleanCardNumber = cardForm.numeroTarjeta.replace(/\s+/g, '');
-      
+
       await api.post('/pagos', {
         reservaId,
         numeroTarjeta: cleanCardNumber,
@@ -84,7 +80,7 @@ function Pagos() {
         expiracion: cardForm.expiracion,
       });
 
-      alert('¡Pago procesado con éxito! Tu reserva ha sido confirmada.');
+      alert('Pago procesado con exito! Tu reserva ha sido confirmada.');
       navigate('/reservas');
     } catch (err) {
       setError(err.response?.data?.message || 'Error al procesar el pago.');
@@ -93,8 +89,8 @@ function Pagos() {
     }
   };
 
-  if (loading) return <div className="loading-container">Cargando detalles de pago...</div>;
-  if (!reservation) return <div className="alert-error">{error || 'Reserva no encontrada.'}</div>;
+  if (loading) return <div className="loading-container"><div className="spinner"></div></div>;
+  if (!reservation) return <div className="alert alert-error">{error || 'Reserva no encontrada.'}</div>;
 
   const hours = calculateHours(reservation.horaInicio, reservation.horaFin);
   const totalCost = hours * Number(reservation.cancha.precioHora);
@@ -102,18 +98,17 @@ function Pagos() {
   return (
     <div className="pagos-page animate-fade-in">
       <div className="pagos-grid">
-        
-        {/* Left: Summary Card */}
-        <div className="summary-card glass-card">
+
+        <div className="summary-card card" style={{ padding: 'var(--space-6)' }}>
           <h2 className="section-title">Resumen del Turno</h2>
           <div className="court-badge-large">
-            <span className="court-badge-icon">⚽</span>
+            <span className="court-badge-icon">&#9917;</span>
             <div>
               <h3>{reservation.cancha.nombre}</h3>
               <p>{reservation.cancha.tipo}</p>
             </div>
           </div>
-          
+
           <div className="details-list">
             <div className="detail-item">
               <span className="detail-label">Fecha</span>
@@ -124,7 +119,7 @@ function Pagos() {
               <span className="detail-value">{reservation.horaInicio} - {reservation.horaFin}</span>
             </div>
             <div className="detail-item">
-              <span className="detail-label">Duración</span>
+              <span className="detail-label">Duracion</span>
               <span className="detail-value">{hours} horas</span>
             </div>
             <div className="detail-item">
@@ -139,22 +134,20 @@ function Pagos() {
           </div>
         </div>
 
-        {/* Right: Payment Method Form */}
-        <div className="payment-card glass-card">
-          <h2 className="section-title">Método de Pago</h2>
+        <div className="payment-card card" style={{ padding: 'var(--space-6)' }}>
+          <h2 className="section-title">Metodo de Pago</h2>
           <p className="payment-subtitle">Ingresa tus datos para confirmar tu reserva de forma segura</p>
-          
-          {error && <div className="alert-error">{error}</div>}
 
-          {/* Sandbox tip warning */}
-          <div className="alert-info">
-            💡 <strong>Simulador:</strong> Puedes ingresar cualquier tarjeta de crédito de 16 dígitos. 
-            Si deseas simular una <strong>tarjeta rechazada</strong>, ingresa un número que finalice en <code>4444</code>.
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <div className="alert alert-info">
+            <strong>Simulador:</strong> Puedes ingresar cualquier tarjeta de credito de 16 digitos.
+            Si deseas simular una <strong>tarjeta rechazada</strong>, ingresa un numero que finalice en <code>4444</code>.
           </div>
 
           <form onSubmit={handleSubmit} className="payment-form">
             <div className="form-group">
-              <label>Nombre del Titular</label>
+              <label className="form-label">Nombre del Titular</label>
               <input
                 type="text"
                 value={cardForm.nombreTitular}
@@ -166,7 +159,7 @@ function Pagos() {
             </div>
 
             <div className="form-group">
-              <label>Número de Tarjeta</label>
+              <label className="form-label">Numero de Tarjeta</label>
               <input
                 type="text"
                 value={cardForm.numeroTarjeta}
@@ -179,7 +172,7 @@ function Pagos() {
 
             <div className="form-row-double">
               <div className="form-group">
-                <label>Vencimiento (MM/AA)</label>
+                <label className="form-label">Vencimiento (MM/AA)</label>
                 <input
                   type="text"
                   value={cardForm.expiracion}
@@ -191,7 +184,7 @@ function Pagos() {
               </div>
 
               <div className="form-group">
-                <label>CVC / CVV</label>
+                <label className="form-label">CVC / CVV</label>
                 <input
                   type="text"
                   value={cardForm.cvv}
@@ -203,156 +196,13 @@ function Pagos() {
               </div>
             </div>
 
-            <button type="submit" disabled={submitting} className="btn-primary checkout-btn">
+            <button type="submit" disabled={submitting} className="btn btn-primary checkout-btn">
               {submitting ? 'Procesando Pago...' : `Pagar $${totalCost.toFixed(2)}`}
             </button>
           </form>
         </div>
 
       </div>
-
-      <style>{`
-        .pagos-page {
-          padding: 1rem 0;
-        }
-        .pagos-grid {
-          display: grid;
-          grid-template-columns: 1fr 1.25fr;
-          gap: 2rem;
-          align-items: start;
-        }
-        .section-title {
-          font-size: 1.5rem;
-          font-weight: 700;
-          margin-bottom: 1.5rem;
-          color: var(--text-primary);
-        }
-        
-        /* Summary Card left side */
-        .court-badge-large {
-          display: flex;
-          align-items: center;
-          gap: 1.25rem;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--border-glass);
-          padding: 1.25rem;
-          border-radius: var(--border-radius);
-          margin-bottom: 1.5rem;
-        }
-        .court-badge-icon {
-          font-size: 2.2rem;
-        }
-        .court-badge-large h3 {
-          font-size: 1.15rem;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-        .court-badge-large p {
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-        }
-        
-        .details-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.85rem;
-          border-bottom: 1px dashed var(--border-glass);
-          padding-bottom: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-        .detail-item {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.95rem;
-        }
-        .detail-label {
-          color: var(--text-secondary);
-        }
-        .detail-value {
-          color: var(--text-primary);
-          font-weight: 500;
-        }
-        
-        .total-due {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .total-due span:first-child {
-          font-size: 1.1rem;
-          color: var(--text-primary);
-          font-weight: 600;
-        }
-        .total-price {
-          font-size: 1.8rem;
-          font-weight: 800;
-          color: var(--color-success);
-          text-shadow: 0 0 12px rgba(0, 245, 160, 0.25);
-        }
-
-        /* Payment right side */
-        .payment-subtitle {
-          color: var(--text-secondary);
-          font-size: 0.9rem;
-          margin-bottom: 1.5rem;
-        }
-        .alert-error {
-          background: rgba(255, 107, 107, 0.15);
-          border: 1px solid var(--color-danger);
-          color: var(--text-primary);
-          padding: 0.75rem;
-          border-radius: 8px;
-          margin-bottom: 1.5rem;
-          font-size: 0.9rem;
-        }
-        .alert-info {
-          background: rgba(0, 242, 254, 0.08);
-          border: 1px solid rgba(0, 242, 254, 0.25);
-          color: var(--text-primary);
-          padding: 0.75rem 1rem;
-          border-radius: 8px;
-          margin-bottom: 1.5rem;
-          font-size: 0.85rem;
-          line-height: 1.5;
-        }
-        .alert-info code {
-          background: rgba(0, 0, 0, 0.3);
-          padding: 0.1rem 0.3rem;
-          border-radius: 4px;
-          color: var(--color-primary);
-          font-family: monospace;
-          font-weight: 600;
-        }
-        
-        .payment-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-        .form-row-double {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-        }
-        .payment-form label {
-          font-size: 0.85rem;
-          color: var(--text-primary);
-          font-weight: 500;
-          margin-bottom: 0.35rem;
-        }
-        .checkout-btn {
-          margin-top: 1rem;
-          padding: 0.85rem;
-          font-size: 1.05rem;
-          width: 100%;
-        }
-
-        @media (max-width: 800px) {
-          .pagos-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 }
