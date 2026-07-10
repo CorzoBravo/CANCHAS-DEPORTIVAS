@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorHandler } from './middlewares/error.middleware';
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocument from './config/swagger.json';
 
 // Import routes
 import clienteRoutes from './routes/cliente.routes';
@@ -13,12 +15,26 @@ import reporteRoutes from './routes/reporte.routes';
 // Load environment variables
 dotenv.config();
 
+// Enforce JWT_SECRET definition in production
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL ERROR: JWT_SECRET environment variable is not defined in production!');
+    process.exit(1);
+  } else {
+    console.warn('WARNING: JWT_SECRET environment variable is not defined. Defaulting to development secret.');
+    process.env.JWT_SECRET = 'temporary-development-jwt-secret-key-2026';
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// API Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // API Routes mounting
 app.use('/api/clientes', clienteRoutes);

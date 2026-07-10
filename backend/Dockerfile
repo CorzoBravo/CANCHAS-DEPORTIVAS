@@ -1,12 +1,15 @@
 # Stage 1: Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
+
+# Install OpenSSL and certificates required by Prisma engine
+RUN apt-get update -y && apt-get install -y openssl ca-certificates
 
 # Copy dependency definitions
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies for typescript compilation)
+# Install all dependencies
 RUN npm install
 
 # Copy source code
@@ -19,9 +22,12 @@ RUN npx prisma generate
 RUN npm run build
 
 # Stage 2: Production runner stage
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
+
+# Install OpenSSL and certificates for runtime
+RUN apt-get update -y && apt-get install -y openssl ca-certificates
 
 # Copy dependency definitions
 COPY package*.json ./

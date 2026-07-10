@@ -10,6 +10,7 @@ import Canchas from './pages/Canchas';
 import Reservas from './pages/Reservas';
 import Pagos from './pages/Pagos';
 import Dashboard from './pages/Dashboard';
+import Clientes from './pages/Clientes';
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -38,7 +39,10 @@ function NavigationHeader() {
         <li><Link to="/canchas" className="nav-link">Canchas</Link></li>
         <li><Link to="/reservas" className="nav-link">Mis Reservas</Link></li>
         {isAdmin && (
-          <li><Link to="/dashboard" className="nav-link admin-tag">Dashboard Admin</Link></li>
+          <>
+            <li><Link to="/clientes" className="nav-link admin-tag">Gestionar Clientes</Link></li>
+            <li><Link to="/dashboard" className="nav-link admin-tag">Dashboard Admin</Link></li>
+          </>
         )}
       </ul>
       <div className="nav-user">
@@ -79,6 +83,11 @@ function App() {
               } />
 
               {/* Guarded Admin-only Routes */}
+              <Route path="/clientes" element={
+                <AdminRoute>
+                  <Clientes />
+                </AdminRoute>
+              } />
               <Route path="/dashboard" element={
                 <AdminRoute>
                   <Dashboard />

@@ -49,9 +49,19 @@ export class ClienteController {
     }
   }
 
-  async getById(req: Request, res: Response, next: NextFunction) {
+  async getById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const loggedUser = req.user!;
+
+      // Enforce ownership: only admin or the client itself can query details
+      if (loggedUser.rol !== 'admin' && loggedUser.id !== id) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'No tienes autorización para ver los detalles de este cliente.',
+        });
+      }
+
       const client = await clienteService.getClientById(id);
       res.status(200).json({
         status: 'success',

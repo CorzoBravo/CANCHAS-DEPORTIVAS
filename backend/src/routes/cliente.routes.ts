@@ -14,7 +14,6 @@ const registerSchema = z.object({
     email: z.string().email('Formato de correo electrónico inválido'),
     password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
     telefono: z.string().optional(),
-    rol: z.enum(['cliente', 'admin']).optional(),
   }),
 });
 

@@ -2,7 +2,7 @@ import { ClienteRepository } from '../repositories/cliente.repository';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-for-court-reservation-system-2026';
+const JWT_SECRET = process.env.JWT_SECRET as string;
 const SALT_ROUNDS = 10;
 
 export class ClienteService {

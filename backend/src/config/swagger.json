@@ -1,0 +1,539 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sistema de Reserva de Canchas Deportivas API",
+    "version": "1.0.0",
+    "description": "Documentación interactiva de la API REST del sistema de reservas de canchas, clientes, pagos y reportes."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Servidor de Desarrollo Local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Cliente": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "nombre": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "telefono": { "type": "string", "nullable": true },
+          "rol": { "type": "string", "enum": ["cliente", "admin"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Cancha": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "nombre": { "type": "string" },
+          "tipo": { "type": "string" },
+          "precioHora": { "type": "number", "format": "float" },
+          "habilitada": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Reserva": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "clienteId": { "type": "string", "format": "uuid" },
+          "canchaId": { "type": "string", "format": "uuid" },
+          "fecha": { "type": "string", "format": "date" },
+          "horaInicio": { "type": "string", "example": "09:00" },
+          "horaFin": { "type": "string", "example": "10:30" },
+          "estado": { "type": "string", "enum": ["pendiente", "confirmada", "cancelada"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Pago": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "reservaId": { "type": "string", "format": "uuid" },
+          "monto": { "type": "number", "format": "float" },
+          "fechaPago": { "type": "string", "format": "date-time" },
+          "estado": { "type": "string", "enum": ["pagado", "rechazado"] },
+          "referenciaPasarela": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/clientes/register": {
+      "post": {
+        "summary": "Registrar un nuevo cliente",
+        "tags": ["Clientes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "email", "password"],
+                "properties": {
+                  "nombre": { "type": "string", "minLength": 2 },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 6 },
+                  "telefono": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente registrado exitosamente."
+          },
+          "400": {
+            "description": "Datos de entrada inválidos o correo ya registrado."
+          }
+        }
+      }
+    },
+    "/api/clientes/login": {
+      "post": {
+        "summary": "Autenticación de cliente / administrador",
+        "tags": ["Clientes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autenticación exitosa. Retorna token JWT.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string" },
+                        "client": { "$ref": "#/components/schemas/Cliente" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales incorrectas."
+          }
+        }
+      }
+    },
+    "/api/clientes/me": {
+      "get": {
+        "summary": "Obtener perfil del usuario logueado",
+        "tags": ["Clientes"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Datos del perfil.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "client": { "$ref": "#/components/schemas/Cliente" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Token inválido o ausente." }
+        }
+      }
+    },
+    "/api/clientes": {
+      "get": {
+        "summary": "Listar todos los clientes (Solo Administrador)",
+        "tags": ["Clientes"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Buscar cliente por nombre o correo",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listado de clientes."
+          },
+          "403": { "description": "Acceso denegado. Se requiere rol admin." }
+        }
+      }
+    },
+    "/api/clientes/{id}": {
+      "get": {
+        "summary": "Obtener detalles de un cliente específico (Admin o Dueño)",
+        "tags": ["Clientes"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos del cliente."
+          },
+          "403": { "description": "Acceso denegado." },
+          "404": { "description": "Cliente no encontrado." }
+        }
+      },
+      "put": {
+        "summary": "Actualizar datos de un cliente (Admin o Dueño)",
+        "tags": ["Clientes"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "telefono": { "type": "string" },
+                  "password": { "type": "string", "minLength": 6 },
+                  "rol": { "type": "string", "enum": ["cliente", "admin"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cliente actualizado." },
+          "403": { "description": "No autorizado." }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar cliente (Solo Administrador)",
+        "tags": ["Clientes"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Cliente eliminado." },
+          "403": { "description": "No autorizado." }
+        }
+      }
+    },
+    "/api/canchas": {
+      "get": {
+        "summary": "Listar canchas",
+        "tags": ["Canchas"],
+        "parameters": [
+          {
+            "name": "all",
+            "in": "query",
+            "description": "Si es 'true' lista todas las canchas; si es 'false' lista solo las habilitadas (por defecto)",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Listado de canchas." }
+        }
+      },
+      "post": {
+        "summary": "Registrar una nueva cancha (Solo Administrador)",
+        "tags": ["Canchas"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "tipo", "precioHora"],
+                "properties": {
+                  "nombre": { "type": "string" },
+                  "tipo": { "type": "string" },
+                  "precioHora": { "type": "number" },
+                  "habilitada": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Cancha registrada." },
+          "403": { "description": "No autorizado." }
+        }
+      }
+    },
+    "/api/canchas/{id}": {
+      "get": {
+        "summary": "Obtener detalles de una cancha",
+        "tags": ["Canchas"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Datos de la cancha." }
+        }
+      },
+      "put": {
+        "summary": "Editar una cancha (Solo Administrador)",
+        "tags": ["Canchas"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre": { "type": "string" },
+                  "tipo": { "type": "string" },
+                  "precioHora": { "type": "number" },
+                  "habilitada": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cancha modificada." }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar cancha (Solo Administrador)",
+        "tags": ["Canchas"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Cancha eliminada." }
+        }
+      }
+    },
+    "/api/canchas/{id}/disponibilidad": {
+      "get": {
+        "summary": "Consultar disponibilidad de una cancha en una fecha",
+        "tags": ["Canchas"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "fecha", "in": "query", "required": true, "description": "Fecha a consultar en formato YYYY-MM-DD", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rangos libres y ocupados calculados dinámicamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fecha": { "type": "string" },
+                        "ocupados": { "type": "array", "items": { "type": "object" } },
+                        "libres": { "type": "array", "items": { "type": "object" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reservas": {
+      "get": {
+        "summary": "Listar reservas (Admin o del Cliente logueado)",
+        "tags": ["Reservas"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "canchaId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "fecha", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista de reservas." }
+        }
+      },
+      "post": {
+        "summary": "Crear una reserva (Valida consistencia e intervalos)",
+        "tags": ["Reservas"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clienteId", "canchaId", "fecha", "horaInicio", "horaFin"],
+                "properties": {
+                  "clienteId": { "type": "string", "format": "uuid" },
+                  "canchaId": { "type": "string", "format": "uuid" },
+                  "fecha": { "type": "string", "format": "date" },
+                  "horaInicio": { "type": "string", "example": "09:00" },
+                  "horaFin": { "type": "string", "example": "10:30" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Reserva creada exitosamente en estado 'pendiente'." },
+          "400": { "description": "Horario no disponible o error en los parámetros." }
+        }
+      }
+    },
+    "/api/reservas/{id}": {
+      "get": {
+        "summary": "Obtener detalles de una reserva",
+        "tags": ["Reservas"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalles de la reserva." }
+        }
+      },
+      "delete": {
+        "summary": "Cancelar una reserva (Admin o Dueño)",
+        "tags": ["Reservas"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Reserva marcada como 'cancelada'." }
+        }
+      }
+    },
+    "/api/pagos": {
+      "get": {
+        "summary": "Consultar historial de pagos global (Solo Administrador)",
+        "tags": ["Pagos"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Historial de pagos." }
+        }
+      },
+      "post": {
+        "summary": "Procesar pago de reserva (Simulación Pasarela)",
+        "tags": ["Pagos"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["reservaId", "numeroTarjeta", "nombreTitular", "cvv", "expiracion"],
+                "properties": {
+                  "reservaId": { "type": "string", "format": "uuid" },
+                  "numeroTarjeta": { "type": "string", "minLength": 16 },
+                  "nombreTitular": { "type": "string" },
+                  "cvv": { "type": "string", "minLength": 3 },
+                  "expiracion": { "type": "string", "example": "12/28" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Pago registrado y reserva confirmada." },
+          "400": { "description": "Pago rechazado (tarjeta terminada en 4444) o reserva ya pagada." }
+        }
+      }
+    },
+    "/api/pagos/reserva/{reservaId}": {
+      "get": {
+        "summary": "Consultar pagos asociados a una reserva específica",
+        "tags": ["Pagos"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "reservaId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista de pagos." }
+        }
+      }
+    },
+    "/api/reportes/reservas": {
+      "get": {
+        "summary": "Métricas de volumen de reservas por fecha (Solo Administrador)",
+        "tags": ["Reportes"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "desde", "in": "query", "required": true, "schema": { "type": "string", "format": "date" } },
+          { "name": "hasta", "in": "query", "required": true, "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": { "description": "Métricas de cantidad." }
+        }
+      }
+    },
+    "/api/reportes/ingresos": {
+      "get": {
+        "summary": "Métricas de ingresos económicos por fecha (Solo Administrador)",
+        "tags": ["Reportes"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "desde", "in": "query", "required": true, "schema": { "type": "string", "format": "date" } },
+          { "name": "hasta", "in": "query", "required": true, "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": { "description": "Métricas de ingresos." }
+        }
+      }
+    },
+    "/api/reportes/canchas-mas-usadas": {
+      "get": {
+        "summary": "Ranking de uso de canchas (Solo Administrador)",
+        "tags": ["Reportes"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Ranking ordenado de popularidad." }
+        }
+      }
+    }
+  }
+}
