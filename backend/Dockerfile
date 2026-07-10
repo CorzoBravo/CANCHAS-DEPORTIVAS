@@ -35,9 +35,10 @@ COPY package*.json ./
 # Install only production dependencies
 RUN npm install --only=production
 
-# Copy compiled files and prisma schema
+# Copy compiled files, tsconfig, and prisma schema
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 4000
