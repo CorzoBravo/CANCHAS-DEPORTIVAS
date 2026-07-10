@@ -168,25 +168,28 @@
 /* --- Admin Court Form --- */
 .admin-form-card {
   margin-bottom: var(--space-8);
+  padding: var(--space-8);
 }
 
 .admin-form-card h3 {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
   color: var(--text-primary);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-8);
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-5);
-  margin-bottom: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
 }
 
 .form-actions {
   display: flex;
   gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .row-checkbox {
@@ -194,7 +197,7 @@
   align-items: center;
   justify-content: flex-start;
   height: 100%;
-  padding-top: var(--space-6);
+  padding-top: var(--space-8);
 }
 
 /* --- Booking Modal --- */
