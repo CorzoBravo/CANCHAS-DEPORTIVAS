@@ -8,7 +8,7 @@ services:
       - POSTGRES_PASSWORD=canchas_password
       - POSTGRES_DB=canchas_db
     volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
+      - postgres_data_prod_v2:/var/lib/postgresql/data
     restart: always
 
   backend:
@@ -35,4 +35,4 @@ services:
     restart: always
 
 volumes:
-  postgres_data_prod:
+  postgres_data_prod_v2:
