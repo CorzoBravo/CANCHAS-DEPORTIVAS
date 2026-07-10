@@ -45,5 +45,5 @@ EXPOSE 4000
 # Set environment to production
 ENV NODE_ENV=production
 
-# Run migrations and start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/app.js"]
+# Run database sync and start the server
+CMD ["sh", "-c", "npx prisma db push && node dist/app.js"]
