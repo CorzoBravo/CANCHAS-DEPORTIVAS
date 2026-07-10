@@ -14,5 +14,12 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true
   },
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "node"
+    }
+  },
   "include": ["src/**/*"]
 }
