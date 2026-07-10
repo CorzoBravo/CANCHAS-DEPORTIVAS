@@ -88,6 +88,14 @@ export class ClienteController {
         });
       }
 
+      // Security check: only admins can change user roles
+      if (req.body.rol && loggedUser.rol !== 'admin') {
+        return res.status(403).json({
+          status: 'error',
+          message: 'No tienes autorización para cambiar el rol de un usuario.',
+        });
+      }
+
       const client = await clienteService.updateClient(id, req.body);
       res.status(200).json({
         status: 'success',

@@ -30,6 +30,7 @@ const updateSchema = z.object({
     email: z.string().email('Formato de correo electrónico inválido').optional(),
     telefono: z.string().optional(),
     password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional(),
+    rol: z.enum(['cliente', 'admin']).optional(),
   }),
 });
 

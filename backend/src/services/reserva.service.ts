@@ -2,11 +2,13 @@ import { ReservaRepository } from '../repositories/reserva.repository';
 import { CanchaService } from './cancha.service';
 import { ClienteService } from './cliente.service';
 import prisma from '../config/db';
+import { NotificacionService } from './notificacion.service';
 
 export class ReservaService {
   private reservaRepository = new ReservaRepository();
   private canchaService = new CanchaService();
   private clienteService = new ClienteService();
+  private notificacionService = new NotificacionService();
 
   async createReserva(data: { clienteId: string; canchaId: string; fecha: string; horaInicio: string; horaFin: string }) {
     // 1. Basic formatting checks
@@ -27,7 +29,7 @@ export class ReservaService {
     await this.clienteService.getClientById(data.clienteId);
 
     // 3. Execute inside a serializable transaction to prevent race conditions
-    return prisma.$transaction(async (tx) => {
+    const reservation = await prisma.$transaction(async (tx) => {
       // Row-level lock the court to prevent concurrent bookings on the same court from overlapping
       await tx.$executeRawUnsafe(
         'SELECT * FROM "Cancha" WHERE id = $1 FOR UPDATE',
@@ -71,6 +73,15 @@ export class ReservaService {
         include: { cancha: true, cliente: true },
       });
     });
+
+    // Notify client asynchronously
+    this.notificacionService.enviarCorreo(
+      reservation.cliente.email,
+      'Pre-Reserva Registrada - CanchaMaster',
+      `Hola ${reservation.cliente.nombre},\n\nTu pre-reserva para la cancha "${reservation.cancha.nombre}" el día ${data.fecha} de ${data.horaInicio} a ${data.horaFin} ha sido creada correctamente.\n\nTienes un balance pendiente para confirmar tu turno. Por favor accede al sistema para procesar el pago.\n\nSaludos,\nCanchaMaster.`
+    ).catch(err => console.error('Error enviando notificación:', err));
+
+    return reservation;
   }
 
   async cancelReserva(id: string, loggedUser: { id: string; rol: string }) {
@@ -88,7 +99,16 @@ export class ReservaService {
       throw new Error('No tienes autorización para cancelar esta reserva.');
     }
 
-    return this.reservaRepository.update(id, { estado: 'cancelada' });
+    const updated = await this.reservaRepository.update(id, { estado: 'cancelada' });
+
+    // Notify client asynchronously
+    this.notificacionService.enviarCorreo(
+      reservation.cliente.email,
+      'Reserva Cancelada - CanchaMaster',
+      `Hola ${reservation.cliente.nombre},\n\nTu reserva para la cancha "${reservation.cancha.nombre}" el día ${reservation.fecha.toLocaleDateString()} a las ${reservation.horaInicio} ha sido cancelada correctamente.\n\nSaludos,\nCanchaMaster.`
+    ).catch(err => console.error('Error enviando notificación:', err));
+
+    return updated;
   }
 
   async getReservaById(id: string) {

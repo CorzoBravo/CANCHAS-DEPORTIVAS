@@ -1,8 +1,10 @@
 import { PagoRepository } from '../repositories/pago.repository';
 import prisma from '../config/db';
+import { NotificacionService } from './notificacion.service';
 
 export class PagoService {
   private pagoRepository = new PagoRepository();
+  private notificacionService = new NotificacionService();
 
   private calculateDurationInHours(start: string, end: string): number {
     const [startH, startM] = start.split(':').map(Number);
@@ -22,7 +24,7 @@ export class PagoService {
     // 1. Fetch reservation
     const reservation = await prisma.reserva.findUnique({
       where: { id: data.reservaId },
-      include: { cancha: true },
+      include: { cancha: true, cliente: true },
     });
 
     if (!reservation) {
@@ -59,7 +61,7 @@ export class PagoService {
     }
 
     // 4. Successful transaction inside a Prisma transaction
-    return prisma.$transaction(async (tx) => {
+    const payment = await prisma.$transaction(async (tx) => {
       // Re-fetch and lock booking to prevent parallel confirmations
       const booking = await tx.reserva.findUnique({
         where: { id: data.reservaId },
@@ -87,6 +89,22 @@ export class PagoService {
 
       return payment;
     });
+
+    // Notify client asynchronously
+    this.notificacionService.enviarCorreo(
+      reservation.cliente.email,
+      'Pago Aprobado y Reserva Confirmada - CanchaMaster',
+      `¡Pago Exitoso!\n\nHola ${reservation.cliente.nombre},\n\nConfirmamos que hemos recibido tu pago de $${totalAmount.toFixed(2)} por tu reserva en la cancha "${reservation.cancha.nombre}" para el día ${reservation.fecha.toLocaleDateString()} de ${reservation.horaInicio} a ${reservation.horaFin}.\n\nTu turno ha sido CONFIRMADO. ¡Disfruta el juego!\n\nSaludos,\nCanchaMaster.`
+    ).catch(err => console.error('Error al enviar correo:', err));
+
+    if (reservation.cliente.telefono) {
+      this.notificacionService.enviarSMS(
+        reservation.cliente.telefono,
+        `CanchaMaster: ¡Pago aprobado! Tu reserva para la cancha "${reservation.cancha.nombre}" el ${reservation.fecha.toLocaleDateString()} a las ${reservation.horaInicio} está CONFIRMADA.`
+      ).catch(err => console.error('Error al enviar SMS:', err));
+    }
+
+    return payment;
   }
 
   async getPaymentsByReserva(reservaId: string) {
