@@ -232,10 +232,10 @@ function Canchas() {
           {canchas.map((cancha) => (
             <div key={cancha.id} className={`cancha-card card card-hover ${!cancha.habilitada ? 'disabled-court' : ''}`}>
               <div className="court-icon">
-                {cancha.tipo.includes('Futbol') && '\u26BD'}
-                {cancha.tipo.includes('Tenis') && '\uD83C\uDFBE'}
-                {cancha.tipo.includes('Basquet') && '\uD83C\uDFC0'}
-                {cancha.tipo.includes('Squash') && '\uD83C\uDFD8'}
+                {cancha.tipo.includes('Futbol') && '⚽'}
+                {cancha.tipo.includes('Tenis') && '🎾'}
+                {cancha.tipo.includes('Basquet') && '🏀'}
+                {cancha.tipo.includes('Squash') && '🏸'}
               </div>
               <h2 className="court-name">{cancha.nombre}</h2>
               <div className="court-info">

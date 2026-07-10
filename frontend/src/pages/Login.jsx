@@ -47,7 +47,7 @@ function Login() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Contrasena</label>
+            <label className="form-label">Clave</label>
             <input
               type="password"
               value={password}
